@@ -176,6 +176,11 @@ const ChatRoom = () => {
 
   const sendMessageHandler = async (e) => {
     e.preventDefault();
+    console.log(formValue);
+
+    if (formValue === "") {
+      return;
+    }
 
     const { uid } = auth.currentUser;
 
