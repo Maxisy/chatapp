@@ -165,6 +165,17 @@ const SignInForm = (props) => {
   const [, setSuccessfullyRegistered] = useState();
   const [isInputValid, setIsInputValid] = useState(false);
 
+  useEffect(() => {
+    if (
+      enteredEmail.toString().includes("@") &&
+      enteredPassword.trim().length > 6
+    ) {
+      setIsInputValid(true);
+    } else {
+      setIsInputValid(false);
+    }
+  }, [enteredEmail, enteredPassword]);
+
   const formSubmitHandler = (event) => {
     event.preventDefault();
     const effect = handleSignIn(
