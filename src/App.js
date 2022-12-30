@@ -6,7 +6,6 @@ import {
   collection,
   query,
   orderBy,
-  limit,
   serverTimestamp,
   addDoc,
 } from "firebase/firestore";
@@ -18,7 +17,7 @@ import {
 
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useCollectionData } from "react-firebase-hooks/firestore";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 initializeApp({
   apiKey: "AIzaSyDT5PSz6Z-FnFvecYyxM9WDVinZ-QU3bPc",
@@ -26,8 +25,8 @@ initializeApp({
   projectId: "chatapp-88308",
   storageBucket: "chatapp-88308.appspot.com",
   messagingSenderId: "427820483592",
-  appId: "1:427820483592:web:310cf90b12875da2047dbd",
-  measurementId: "G-5KVMM18VKP",
+  appId: "1:427820483592:web:cd8bc4214b2ca660047dbd",
+  measurementId: "G-TPH1JRPPLR",
 });
 
 const auth = getAuth();
@@ -47,7 +46,15 @@ function App() {
 
 const SignIn = () => {
   const [logIn, setLogIn] = useState();
-  const errorDivRef = useRef();
+  const [errorVisible, setErrorVisible] = useState(false);
+  const [errorTitle, seterrorTitle] = useState("");
+  const [errorDescription, setErrorDescription] = useState("");
+
+  const showError = (title, description) => {
+    seterrorTitle(title);
+    setErrorDescription(description);
+    setErrorVisible(true);
+  };
 
   const logInHandler = () => {
     setLogIn(true);
@@ -72,11 +79,16 @@ const SignIn = () => {
   } else {
     return (
       <div>
-        <div className="error-div" hidden ref={errorDivRef}></div>
+        {errorVisible && (
+          <div className="error-div">
+            <h2>{errorTitle}</h2>
+            <p>{errorDescription}</p>
+          </div>
+        )}
         {logIn ? (
-          <SignInForm action="LOG_IN" errorDiv={errorDivRef} />
+          <SignInForm action="LOG_IN" showErrorFunction={showError} />
         ) : (
-          <SignInForm action="REGISTER" errorDiv={errorDivRef} />
+          <SignInForm action="REGISTER" showErrorFunction={showError} />
         )}
       </div>
     );
@@ -93,7 +105,7 @@ const SignOut = () => {
   );
 };
 
-const handleSignIn = (action, email, password, errorDiv) => {
+const handleSignIn = (action, email, password, showErrorFunction) => {
   if (action === "REGISTER") {
     createUserWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
@@ -101,8 +113,22 @@ const handleSignIn = (action, email, password, errorDiv) => {
         return true;
       })
       .catch((error) => {
-        const errorMessage = error.message;
-        console.error(errorMessage);
+        const errorCode = error.code;
+
+        console.warn(errorCode);
+        if (errorCode === "auth/email-already-in-use") {
+          showErrorFunction(
+            "Invalid email",
+            "This email address is already in use."
+          );
+        }
+        if (errorCode === "auth/weak-password") {
+          showErrorFunction(
+            "Weak password",
+            "Password must be minimum 6 characters."
+          );
+        }
+
         return false;
       });
   } else {
@@ -113,10 +139,19 @@ const handleSignIn = (action, email, password, errorDiv) => {
       })
       .catch((error) => {
         const errorCode = error.code;
-        
+
+        console.warn(errorCode);
         if (errorCode === "auth/user-not-found") {
-          errorDiv.innerHTML = "<h2>Please register first</h2><br /><p>Please refresh the page and register first before logging in</p>";
-          console.log(errorDiv.props);
+          showErrorFunction(
+            "Registration required",
+            "Reload the page and use the register button first."
+          );
+        }
+        if (errorCode === "auth/wrong-password") {
+          showErrorFunction(
+            "Invalid password",
+            "This password is invalid, if you forgot it contact an admin."
+          );
         }
 
         return false;
@@ -128,10 +163,16 @@ const SignInForm = (props) => {
   const [enteredEmail, setEnteredEmail] = useState("");
   const [enteredPassword, setEnteredPassword] = useState("");
   const [, setSuccessfullyRegistered] = useState();
+  const [isInputValid, setIsInputValid] = useState(false);
 
   const formSubmitHandler = (event) => {
     event.preventDefault();
-    const effect = handleSignIn(props.action, enteredEmail, enteredPassword, props.errorDiv);
+    const effect = handleSignIn(
+      props.action,
+      enteredEmail,
+      enteredPassword,
+      props.showErrorFunction
+    );
     setSuccessfullyRegistered(effect);
   };
 
@@ -147,19 +188,15 @@ const SignInForm = (props) => {
     <form onSubmit={formSubmitHandler} className="sign-in-form">
       <label className="sign-in-label">Email</label>
       <br />
-      <input
-        type="email"
-        onChange={emailInputChangeHandler}
-      ></input>
+      <input type="email" onChange={emailInputChangeHandler}></input>
       <br />
       <label className="sign-in-label">Password</label>
       <br />
-      <input
-        type="password"
-        onChange={passwordInputChangeHandler}
-      ></input>
+      <input type="password" onChange={passwordInputChangeHandler}></input>
       <br />
-      <button type="submit">Sign In</button>
+      <button type="submit" disabled={!isInputValid}>
+        Sign In
+      </button>
     </form>
   );
 };
@@ -188,7 +225,7 @@ const ChatRoom = () => {
       text: formValue,
       createdAt: serverTimestamp(),
       uid,
-      signature: auth.currentUser.email
+      signature: auth.currentUser.email,
     });
 
     setFormValue("");
@@ -229,9 +266,6 @@ const ChatMessage = (props) => {
       <div className={`message ${messageClass}`}>
         <p>{text}</p>
       </div>
-      {/* <div className={`${messageClass} signature`}> */}
-
-      {/* </div> */}
     </div>
   );
 };
