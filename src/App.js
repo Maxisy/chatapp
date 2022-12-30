@@ -205,6 +205,10 @@ const SignInForm = (props) => {
       <br />
       <input type="password" onChange={passwordInputChangeHandler}></input>
       <br />
+      <div className="info-div">
+        <h2>Password info</h2>
+        <p>Password must be at least 6 characters long.</p>
+      </div>
       <button type="submit" disabled={!isInputValid}>
         Sign In
       </button>
