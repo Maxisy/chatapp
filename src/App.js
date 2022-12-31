@@ -13,6 +13,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -64,6 +66,11 @@ const SignIn = () => {
     setLogIn(false);
   };
 
+  const signInWithGoogle = () => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider);
+  };
+
   if (logIn === undefined) {
     return (
       <div>
@@ -73,6 +80,11 @@ const SignIn = () => {
         <br />
         <button onClick={registerHandler} className="sign-in-button">
           Register
+        </button>
+        <br />
+        <button onClick={signInWithGoogle} className="sign-in-button">
+          {/* <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRu1PJmT_THldF0n5APcmt9p10utgu6KSw4cH2fQ5Xhpw&s" /> */}
+          &nbsp;Sign in with Google
         </button>
       </div>
     );
